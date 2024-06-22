@@ -19,13 +19,19 @@ const registerUser = asyncHandler(async (req, res) => {
         mobile: Joi.string().pattern(new RegExp('^[0-9]{10}$')).required()
     });
 
+    const password = req.body.password;
+    const fullname = req.body.fullname;
+    const email = req.body.email;
+    const username = req.body.username;
+
     const { error } = userSchema.validate(req.body);
     if (error) {
         res.status(400);
         throw new Error(error.details[0].message);
     }
 
-    const userExists = await User.findOne({ $or: [{ email }, { username }] });
+    const userExists = await User.findOne({ $or: [{ email:req.body.email }, { username:req.body.username }] });
+    
     if (userExists) {
         res.status(400);
         if (userExists.email === email) {
@@ -34,8 +40,9 @@ const registerUser = asyncHandler(async (req, res) => {
             throw new Error('Username already exists');
         }
     }
-
+    
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = await User.create({
         fullname,
         email,
