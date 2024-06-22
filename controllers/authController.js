@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const Joi = require('joi');
 
 // @desc Register a user
 // @route POST /api/users/register
@@ -9,11 +10,19 @@ const jwt = require('jsonwebtoken');
 // @access public
 
 const registerUser = asyncHandler(async (req, res) => {
-    const {mobile, email, fullname, username, password} = req.body;
 
-    if(!mobile || !email || !fullname || !username || !password) {
+    const userSchema = Joi.object({
+        username: Joi.string().min(3).max(30).required(),
+        fullname: Joi.string().min(3).max(30).required(),
+        email: Joi.string().email().required(),
+        password: Joi.string().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')).required(),
+        mobile: Joi.string().pattern(new RegExp('^[0-9]{10}$')).required()
+    });
+
+    const { error } = userSchema.validate(req.body);
+    if (error) {
         res.status(400);
-        throw new Error('Please add all fields');
+        throw new Error(error.details[0].message);
     }
 
     const userExists = await User.findOne({ $or: [{ email }, { username }] });
@@ -24,11 +33,6 @@ const registerUser = asyncHandler(async (req, res) => {
         } else {
             throw new Error('Username already exists');
         }
-    }
-
-    if (username.length < 4) {
-        res.status(400);
-        throw new Error('Username must be at least 4 characters long');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
