@@ -13,7 +13,7 @@ const { validateUser, validateDate  } = require('../services/validationService')
 const registerUser = asyncHandler(async (req, res) => {
 
     const { username, fullname, email, password, mobile } = req.body;
-
+    console.log(username);
     const { error } = validateUser(req.body);
     if (error) {
         res.status(400);
